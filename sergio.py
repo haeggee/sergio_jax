@@ -108,15 +108,15 @@ class SergioJAX:
         Args:
             graph (jax.Array): [n_genes, n_genes] 
                 adjacency matrix of the GRN
-            contribution_rates (jax.Array): [n_genes, n_genes]
+            contribution_rates (jax.Array): [n_cell_types, n_genes, n_genes]
                 contribution rates of the regulators
             basal_rates (jax.Array): [n_cell_types, n_genes] basal rates of the target genes
             hill (Union[jax.Array, float], optional): hill coefficient. Defaults to 2.0.
         """
         assert graph.shape == (self.n_genes, self.n_genes), \
                 'graph should be of size [n_genes, n_genes]'
-        assert contribution_rates.shape == (self.n_genes, self.n_genes), \
-            'contribution_rates should be of size [n_genes, n_genes]'
+        assert contribution_rates.shape == (self.n_cell_types, self.n_genes, self.n_genes), \
+            'contribution_rates should be of size [n_cell_types, n_genes, n_genes]'
         assert basal_rates.shape == (self.n_cell_types, self.n_genes), \
                 'basal_rates should be of size [n_genes, ]'
         assert jnp.isscalar(hill) or hill.shape == (  # type: ignore
@@ -125,8 +125,7 @@ class SergioJAX:
 
         self.graph = graph
         # repeat for different cell types
-        self.contribution_rates = contribution_rates[None].repeat(
-            self.n_cell_types, 0)
+        self.contribution_rates = contribution_rates
         self.basal_rates = basal_rates
         # make sure to zero out basal rates for non-source genes (no master-regulators)
         self.basal_rates *= (graph.sum(axis=0) == 0)
