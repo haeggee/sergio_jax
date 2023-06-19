@@ -1,3 +1,4 @@
+# Authors: Yunshu Ouyang, Alexander Hägele
 from functools import partial
 from typing import Optional, Union
 
@@ -73,7 +74,6 @@ class SergioJAX:
         dt: float = 0.01,
         safety_steps: int = 0,
     ):
-
         assert noise_type in [
             "sp",
             "spd",
