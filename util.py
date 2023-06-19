@@ -1,7 +1,8 @@
+import random
+
+import igraph as ig
 import jax
 import jax.numpy as jnp
-import random
-import igraph as ig
 
 
 def scale_free_graph(rng: jax.random.PRNGKeyArray,
