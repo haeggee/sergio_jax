@@ -2,8 +2,12 @@
 
 This is a JAX implementation of [SERGIO](https://www.sciencedirect.com/science/article/pii/S2405471220302878), a simulator for single-cell gene expressions guided by gene regulatory networks (GRNs). It is up to 100x faster than the original implementation and can be used to simulate large datasets (~ thousands of genes and cells) within a few seconds on a consumer laptop.
 
-![2D UMAP of SERGIO-JAX created gene expressions](sergio_umap.svg)
-*2D UMAP of SERGIO-JAX created gene expressions*
+<p align="center">
+    <figure>
+      <img src="sergio_umap.svg" alt="2D UMAP of SERGIO-JAX created gene expressions">
+      <figcaption>2D UMAP of SERGIO-JAX created gene expressions</figcaption>
+    </figure>
+</p>
 
 Authors: Yunshu Ouyang, Alexander Hägele
 
