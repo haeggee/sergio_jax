@@ -1,6 +1,13 @@
 # SERGIO-JAX: Fast simulation of single-cell gene expressions
+
+This is a JAX implementation of [SERGIO](https://www.sciencedirect.com/science/article/pii/S2405471220302878), a simulator for single-cell gene expressions guided by gene regulatory networks (GRNs). It is up to 100x faster than the original implementation and can be used to simulate large datasets (~ thousands of genes and cells) within a few seconds on a consumer laptop.
+
+![2D UMAP of SERGIO-JAX created gene expressions](sergio_umap.svg)
+*2D UMAP of SERGIO-JAX created gene expressions*
+
 Authors: Yunshu Ouyang, Alexander Hägele
 
+---
 ## What is SERGIO?
 SERGIO is a simulator for single-cell expression data guided by gene regulatory networks (GRNs). The GRN can be a user-specified parameter, which allows for flexible simulation of data that closely ressembles real-world datasets. SERGIO can simulate any number of cell types and number of cells (samples). Mathematically, the simulator uses stochastic differential equations based on the Chemical Langevin Equation (CLE).
 
@@ -51,6 +58,16 @@ expr = sim.getExpressions(rng=subrng)
 ```
 
 Additionally, it is possible to add technical noise to the expressions, as outlined in [run_sergio.ipynb](run_sergio.ipynb).
+
+## Speedup
+|   `# genes`	|  SERGIO (_original_) 	|  SERGIO-JAX (incl. compilation time) 	| SERGIO-JAX (after jit)  	|
+|:---:	        |:---:	                |:---:	                                |:---:	                    |
+|   200	        |   	113s            |   	         1.4s                   |   	   0.6s             |
+|   400	        |   	285s            |   	         3.1s                   |   	    2.1s            |
+|   1000	    |   	---             |   	         8.0s                   |   	    7.0s            |
+
+
+Rough estimates of runtime on a consumer laptop (Macbook Pro 14', M1 Pro, 16GB RAM) for varying number of genes, 10 cell types, and 150 cells per type. The simulation parameters are the same across all samples. The JAX implementation is up to ~100x faster than the original implementation.
 
 ---
 ### Dependencies
