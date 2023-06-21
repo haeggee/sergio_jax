@@ -5,6 +5,7 @@ from typing import Optional, Union
 import jax
 import jax.numpy as jnp
 from jax import jit
+from sklearn.linear_model import Ridge
 
 
 class SergioJAX:
@@ -18,7 +19,7 @@ class SergioJAX:
         * basal_rates: basal rates of the genes
         * hill: hill coefficients
 
-        These parameters can be fixed via the custom_graph function or adapted to real data (TODO Yunshu).
+        These parameters can be fixed via the custom_graph function or adapted to real data.
 
         Additional parameters include the decay rates of the genes and the noise amplitude as well as the type of noise.
 
@@ -74,6 +75,7 @@ class SergioJAX:
         dt: float = 0.01,
         safety_steps: int = 0,
     ):
+
         assert noise_type in [
             "sp",
             "spd",
@@ -96,7 +98,7 @@ class SergioJAX:
         self.noise_type = noise_type
 
         self.noise_amplitude = noise_amplitude
-        self.decays = decays
+        self.decays = decays * jnp.ones(self.n_genes)
 
         self.init_steps = init_steps
         self.safety_steps = safety_steps
@@ -105,18 +107,22 @@ class SergioJAX:
         self,
         graph: jax.Array,
         contribution_rates: jax.Array,
-        basal_rates: jax.Array,
+        basal_rates: jax.Array = None,
+        data: jax.Array = None,
         hill: Union[jax.Array, float] = 2.0,
     ):
         """Insert custom graph for the gene regulatory network (GRN).
             This function is used to initialize the simulator with a custom GRN.
+            Contribution rates and basal rates can be learned from data provided the contribution type is given (activator or repressor).
+            This information is passed as the sign of the contribution rates, positive for activator and negative for repressor.
 
         Args:
             graph (jax.Array): [n_genes, n_genes]
                 adjacency matrix of the GRN
             contribution_rates (jax.Array): [n_cell_types, n_genes, n_genes]
                 contribution rates of the regulators
-            basal_rates (jax.Array): [n_cell_types, n_genes] basal rates of the target genes
+            basal_rates (jax.Array, optional)): [n_cell_types, n_genes] basal rates of the target genes
+            data (jax.Array, optional): [n_cell_types, n_genes, n_cells] real data used for fitting the contribution and basal rates
             hill (Union[jax.Array, float], optional): hill coefficient. Defaults to 2.0.
         """
         assert graph.shape == (
@@ -127,17 +133,73 @@ class SergioJAX:
             self.n_cell_types,
             self.n_genes,
             self.n_genes,
-        ), "contribution_rates should be of size [n_cell_types, n_genes, n_genes]"
-        assert basal_rates.shape == (
+        ) or contribution_rates.shape == (
+            self.n_genes,
+            self.n_genes,
+        ), "contribution_rates should be of size [n_cell_types, n_genes, n_genes] or [n_genes, n_genes]"
+        assert basal_rates is None or basal_rates.shape == (
             self.n_cell_types,
             self.n_genes,
-        ), "basal_rates should be of size [n_genes, ]"
+        ), "basal_rates should be of size [n_cell_types, n_genes]"
+        assert data is None or (
+            len(data.shape) == 3
+            and data.shape[:2]
+            == (
+                self.n_cell_types,
+                self.n_genes,
+            )
+        ), "data should be of size [n_cell_types, n_genes, x]"
         assert jnp.isscalar(hill) or hill.shape == (  # type: ignore
             self.n_genes,
         ), "hill should be a scalar or a vector of size n_genes"
 
         self.graph = graph
-        # repeat for different cell types
+        if data is None:
+            # repeat for different cell types
+            if len(contribution_rates.shape) == 2:
+                contribution_rates = contribution_rates[None].repeat(
+                    self.n_cell_types, 0
+                )
+        else:
+            contribution_rates = contribution_rates.astype(jnp.float32)
+            basal_rates = jax.vmap(lambda data: self.decays * jnp.mean(data, axis=1))(
+                data
+            )
+
+            clf = Ridge(alpha=1.0, fit_intercept=False, positive=True)
+            flattened = data.transpose((2, 0, 1)).reshape(-1, self.n_genes)
+            halfResp = jnp.mean(flattened, axis=0)
+            sign = jnp.where(contribution_rates > 0, 1, -1)
+
+            def find_contribution_rates(contribution_rates, sign, data):
+                for gene_id in range(self.n_genes):
+                    ycur = self.decays[gene_id] * data[:, gene_id]
+                    regulators_idx = graph[:, gene_id] == 1
+                    if jnp.sum(regulators_idx) > 0.5:
+                        mean_mat = jnp.tile(halfResp[regulators_idx], (len(data), 1))
+                        Xcur = self.hill_function(
+                            data[:, regulators_idx], mean_mat, hill
+                        )
+                        cur_sign = jnp.tile(
+                            sign[regulators_idx, gene_id], (len(data), 1)
+                        )
+                        Xcur = jnp.where(cur_sign > 0, Xcur, 1 - Xcur)
+                        clf.fit(Xcur, ycur)
+                        contribution_rates.at[regulators_idx, gene_id].set(clf.coef_)
+                return contribution_rates
+
+            if len(contribution_rates) == 3:
+                for c in range(self.n_cell_types):
+                    data_c = data[c].transpose((1, 0))
+                    contribution_rates[c] = find_contribution_rates(
+                        contribution_rates[c], sign[c], data_c
+                    )
+            else:
+                contribution_rates = find_contribution_rates(
+                    contribution_rates, sign, flattened
+                )
+            contribution_rates *= sign
+
         self.contribution_rates = contribution_rates
         self.basal_rates = basal_rates
         # make sure to zero out basal rates for non-source genes (no master-regulators)
