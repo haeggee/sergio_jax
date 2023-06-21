@@ -45,8 +45,17 @@ sim = SergioJAX(
 ```python
 sim.custom_graph(
     graph,
-    k,
+    k, # contribution rates
     basal_rates,
+    hill,
+)
+```
+In addition, our implementation also provides the possibility to learn the contribution rates and basal rates from real data using Ridge regression. In this case, we require the graph structure, hill coefficient as well as the edge type (activator or repressor) as input.
+```python
+sim.custom_graph(
+    graph,
+    k, # sign matrix with +1 for activator, -1 for repressor
+    data, # real data matrix
     hill,
 )
 ```
