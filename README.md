@@ -92,4 +92,6 @@ Our example notebook additionally uses `umap-learn`, `igraph`, `matplotlib`, and
 ## Credits
 If you use SERGIO-JAX in your project, please cite the [original paper](https://www.sciencedirect.com/science/article/pii/S2405471220302878) and acknowledge our repository.
 
-_Yunshu Ouyang, Alexander Hägele. 2023._
+_Yunshu Ouyang, ETH Zürich & Broad/MIT._
+
+_Alexander Hägele, ETH Zürich (work partially done while at Apple)._
