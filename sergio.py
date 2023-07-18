@@ -185,7 +185,7 @@ class SergioJAX:
                         )
                         Xcur = jnp.where(cur_sign > 0, Xcur, 1 - Xcur)
                         clf.fit(Xcur, ycur)
-                        contribution_rates.at[regulators_idx, gene_id].set(clf.coef_)
+                        contribution_rates = contribution_rates.at[regulators_idx, gene_id].set(clf.coef_)
                 return contribution_rates
 
             if len(contribution_rates) == 3:
