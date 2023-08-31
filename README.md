@@ -1,6 +1,6 @@
 # `SERGIO-JAX`: Fast Simulation of Single-Cell Gene Expressions
 
-This is a JAX implementation of [SERGIO](https://www.sciencedirect.com/science/article/pii/S2405471220302878), a simulator for single-cell gene expressions guided by gene regulatory networks (GRNs). It is up to 100x faster than the original implementation and can be used to simulate large datasets (~ thousands of genes and cells) within a few seconds on a consumer laptop.
+This is a JAX implementation of [SERGIO](https://www.sciencedirect.com/science/article/pii/S2405471220302878) (Dibaeinia and Sinha, 2020), a simulator for single-cell gene expressions guided by gene regulatory networks (GRNs). It is up to 100x faster than the original implementation and can be used to simulate large datasets (~ thousands of genes and cells) within a few seconds on a consumer laptop.
 
 <p align="center">
     <figure>
