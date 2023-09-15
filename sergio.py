@@ -75,7 +75,6 @@ class SergioJAX:
         dt: float = 0.01,
         safety_steps: int = 0,
     ):
-
         assert noise_type in [
             "sp",
             "spd",
@@ -108,8 +107,8 @@ class SergioJAX:
         graph: jax.Array,
         contribution_rates: jax.Array,
         basal_rates: jax.Array = None,
-        data: jax.Array = None,
         hill: Union[jax.Array, float] = 2.0,
+        data: jax.Array = None,
     ):
         """Insert custom graph for the gene regulatory network (GRN).
             This function is used to initialize the simulator with a custom GRN.
@@ -185,7 +184,9 @@ class SergioJAX:
                         )
                         Xcur = jnp.where(cur_sign > 0, Xcur, 1 - Xcur)
                         clf.fit(Xcur, ycur)
-                        contribution_rates = contribution_rates.at[regulators_idx, gene_id].set(clf.coef_)
+                        contribution_rates = contribution_rates.at[
+                            regulators_idx, gene_id
+                        ].set(clf.coef_)
                 return contribution_rates
 
             if len(contribution_rates) == 3:
