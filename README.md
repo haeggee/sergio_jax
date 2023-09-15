@@ -1,6 +1,6 @@
 # `SERGIO-JAX`: Fast Simulation of Single-Cell Gene Expressions
 
-This is a JAX implementation of [SERGIO](https://www.sciencedirect.com/science/article/pii/S2405471220302878) (Dibaeinia and Sinha, 2020), a simulator for single-cell gene expressions guided by gene regulatory networks (GRNs). It is up to 100x faster than the original implementation and can be used to simulate large datasets (~ thousands of genes and cells) within a few seconds on a consumer laptop.
+This is a JAX implementation of [SERGIO](https://www.sciencedirect.com/science/article/pii/S2405471220302878) (Dibaeinia and Sinha, 2020), a simulator for single-cell gene expressions guided by gene regulatory networks (GRNs). It is up to 100x faster than the original implementation and can be used to simulate large datasets (~ thousands of genes and cells) within a few seconds on a consumer laptop; *importantly*, it allows automatic-differentiation and backpropagation through the simulator.
 
 <p align="center">
     <figure>
@@ -24,7 +24,8 @@ Dibaeinia, P., & Sinha, S. (2020). SERGIO: a single-cell expression simulator gu
 * GitHub: https://github.com/PayamDiba/SERGIO
 
 ## What does this repository contain?
-This repository provides a reimplementation of SERGIO ***in JAX***. It is `jit`-compatible, which allows the usage of hardware accelerators (such as GPUs) for fast inference. We focus on the steady-state simulation of the cell types.
+This repository provides a new implementation of SERGIO ***in JAX***. It is `jit`-compatible, which allows the usage of hardware accelerators (such as GPUs) for fast inference and, in particular, backpropagating through the simulator. We focus on the steady-state simulation of the cell types.
+
 
 ## Usage
 We include a simple notebook in [run_sergio.ipynb](run_sergio.ipynb) that demonstrates the usage of the `SergioJAX` class.
@@ -55,8 +56,8 @@ In addition, our implementation also provides the possibility to learn the contr
 sim.custom_graph(
     graph,
     k, # sign matrix with +1 for activator, -1 for repressor
-    data, # real data matrix
     hill,
+    data, # real data matrix
 )
 ```
 * Finally, run the simulation and extract the clean data
@@ -71,6 +72,22 @@ expr = sim.getExpressions(rng=subrng)
 ```
 
 Additionally, it is possible to add technical noise to the expressions, as outlined in [run_sergio.ipynb](run_sergio.ipynb).
+
+
+## Differences to the original implementation
+To achieve a `jax`-compatible implementation, we make specific design choices that differ from the original implementation. Generally, we avoid a topological sorting of the GRN which is required for the original implementation. Instead, we perform repeated iterations of the CLE that updates the gene expressions *in parallel* for all genes and cell types.
+
+The most notable difference lies in the heuristic that is used to determine the half-response concentration of the Hill function. The original implementation uses a heuristic that is based on the ***mean*** expression of the gene, where the mean is taken both across all cell types, and (possible because of the topological sorting) across the already simulated cells. The original paper contains a detailed discussion of this design choice in the section "Estimating Half-Response Parameter" (page e4). 
+
+We use a similar approach; however, we use the mean expression of the gene across all cell types of the *previous* simulation step, which allows iteratively updating all gene expressions in parallel. 
+
+
+In our experiments, we found that both approaches lead to similar results, albeit the different implementation of course creates differences. We show a more detailed investigation and metrics in [compare_sergio.ipynb](compare_sergio.ipynb), where we compare the original implementation to our JAX implementation with the same set of graph and parameters.
+
+
+### NOTE:
+The authors of SERGIO also implemented a more scalable version of SERGIO (similarly, for steady-state simulations and not the dynamic simulation of differentiation trajectories) in Python, which resides in the ["v2" branch of SERGIO's github](https://github.com/PayamDiba/SERGIO/tree/v2). We have not compared our implementation to this version.
+
 
 ## Speedup
 |   `# genes`	|  SERGIO (_original_) 	|  SERGIO-JAX (incl. compilation time) 	| SERGIO-JAX (after `jit`)  	|
