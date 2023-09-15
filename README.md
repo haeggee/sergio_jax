@@ -86,7 +86,7 @@ In our experiments, we found that both approaches lead to similar results, albei
 
 
 ### NOTE:
-The authors of SERGIO also implemented a more scalable version of SERGIO (similarly, for steady-state simulations and not the dynamic simulation of differentiation trajectories) in Python, which resides in the ["v2" branch of SERGIO's github](https://github.com/PayamDiba/SERGIO/tree/v2). We have not compared our implementation to this version.
+The authors of SERGIO also implemented a more scalable version of SERGIO (similarly, for steady-state simulations and not the dynamic simulation of differentiation trajectories) in Python, which resides in the ["v2" branch of SERGIO's github](https://github.com/PayamDiba/SERGIO/tree/v2). We have not compared our implementation to this version yet.
 
 
 ## Speedup
